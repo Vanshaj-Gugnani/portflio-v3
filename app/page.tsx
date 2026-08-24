@@ -1,12 +1,13 @@
 import Image from "next/image";
+import CapabilityBands from "./components/CapabilityBands";
 import CountingNumber from "./components/CountingNumber";
 import TextReveal from "./components/TextReveal";
 
 const navigation = [
   { label: "home", href: "#top" },
   { label: "about", href: "#about" },
+  { label: "skills", href: "#skills" },
   { label: "work", count: "04", href: "#work" },
-  { label: "contact", href: "#contact" },
 ];
 
 function ArrowUpRight() {
@@ -216,6 +217,23 @@ export default function Home() {
             </p>
           </li>
         </ul>
+      </section>
+
+      <section
+        id="skills"
+        className="skills-section"
+        aria-labelledby="skills-title"
+      >
+        <div className="skills-intro">
+          <TextReveal>
+            <h2 id="skills-title">
+              I work across the{" "}
+              <span className="skills-accent">whole system.</span>
+            </h2>
+          </TextReveal>
+        </div>
+
+        <CapabilityBands />
       </section>
 
       <section
