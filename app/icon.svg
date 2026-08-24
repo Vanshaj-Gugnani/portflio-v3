@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Vanshaj</title>
+  <rect width="512" height="512" rx="112" fill="#f07077" />
+  <path
+    fill="#111111"
+    d="M96 112h86l74 217 74-217h86L303 408h-94L96 112Z"
+  />
+</svg>
