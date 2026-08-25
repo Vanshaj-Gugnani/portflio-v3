@@ -48,7 +48,7 @@ export default function Home() {
             <a
               href={item.href}
               key={item.label}
-              aria-current={index === 0 ? "page" : undefined}
+              aria-current={index === 0 ? "location" : undefined}
             >
               {item.label}
               {item.count ? <sup>({item.count})</sup> : null}

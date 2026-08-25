@@ -129,12 +129,12 @@ a {
 }
 
 .primary-nav a:hover,
-.primary-nav a[aria-current="page"] {
+.primary-nav a[aria-current] {
   color: var(--accent);
 }
 
 .primary-nav a:hover::after,
-.primary-nav a[aria-current="page"]::after {
+.primary-nav a[aria-current]::after {
   transform: scaleX(1);
   transform-origin: left;
 }

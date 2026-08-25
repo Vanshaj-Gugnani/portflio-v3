@@ -6,6 +6,20 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 
 gsap.registerPlugin(ScrollToPlugin);
 
+const SECTION_HASHES = [
+  "#top",
+  "#about",
+  "#skills",
+  "#work",
+  "#contact",
+] as const;
+
+type SectionHash = (typeof SECTION_HASHES)[number];
+
+function isSectionHash(hash: string): hash is SectionHash {
+  return SECTION_HASHES.includes(hash as SectionHash);
+}
+
 /**
  * Smooth in-page navigation, done in GSAP rather than with CSS
  * `scroll-behavior: smooth`.
@@ -19,6 +33,76 @@ gsap.registerPlugin(ScrollToPlugin);
  */
 export default function SmoothAnchors() {
   useEffect(() => {
+    const sections = SECTION_HASHES.flatMap((hash) => {
+      const section = document.querySelector<HTMLElement>(hash);
+
+      return section ? [{ hash, section }] : [];
+    });
+    const navigationLinks = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(
+        '.primary-nav a[href^="#"], .menu-panel a[href^="#"]',
+      ),
+    );
+
+    let activeHash: SectionHash = "#top";
+    let frame = 0;
+    let isNavigating = false;
+    let mounted = true;
+    let scrollTween: gsap.core.Tween | null = null;
+
+    const updateNavigation = (hash: SectionHash) => {
+      activeHash = hash;
+
+      navigationLinks.forEach((link) => {
+        if (link.getAttribute("href") === hash) {
+          link.setAttribute("aria-current", "location");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+    };
+
+    const findActiveSection = () => {
+      // A section becomes current after its top enters the upper third of the
+      // viewport. This remains stable while the work reel is pinned because
+      // its ScrollTrigger spacer stays inside #work.
+      const activationLine = window.innerHeight * 0.34;
+      let nextHash = sections[0]?.hash ?? "#top";
+
+      for (const { hash, section } of sections) {
+        if (section.getBoundingClientRect().top > activationLine) break;
+        nextHash = hash;
+      }
+
+      return nextHash;
+    };
+
+    const syncActiveSection = () => {
+      frame = 0;
+
+      // A clicked anchor owns the URL until its tween settles. Without this,
+      // the scrollspy would briefly write every crossed section into the URL.
+      if (isNavigating) return;
+
+      const nextHash = findActiveSection();
+
+      if (nextHash === activeHash && window.location.hash === nextHash) return;
+
+      updateNavigation(nextHash);
+      window.history.replaceState(window.history.state, "", nextHash);
+    };
+
+    const scheduleSectionSync = () => {
+      if (!mounted || frame) return;
+      frame = window.requestAnimationFrame(syncActiveSection);
+    };
+
+    const initialHash = isSectionHash(window.location.hash)
+      ? window.location.hash
+      : findActiveSection();
+
+    updateNavigation(initialHash);
+
     const handleClick = (event: MouseEvent) => {
       // Leave modified clicks alone: they open tabs and windows.
       if (
@@ -46,10 +130,25 @@ export default function SmoothAnchors() {
 
       event.preventDefault();
 
+      scrollTween?.kill();
+      isNavigating = true;
+
       // Following an anchor normally moves focus too. Keep that, or keyboard
       // users land at the new scroll position with focus still on the link.
       const settle = () => {
-        window.history.pushState(null, "", hash);
+        scrollTween = null;
+
+        if (window.location.hash !== hash) {
+          window.history.pushState(window.history.state, "", hash);
+        }
+
+        if (isSectionHash(hash)) {
+          updateNavigation(hash);
+        } else {
+          updateNavigation(findActiveSection());
+        }
+
+        isNavigating = false;
         target.setAttribute("tabindex", "-1");
         target.focus({ preventScroll: true });
         target.addEventListener(
@@ -57,6 +156,14 @@ export default function SmoothAnchors() {
           () => target.removeAttribute("tabindex"),
           { once: true },
         );
+      };
+
+      const handleInterrupted = () => {
+        if (!isNavigating) return;
+
+        scrollTween = null;
+        isNavigating = false;
+        scheduleSectionSync();
       };
 
       const reduced = window.matchMedia(
@@ -70,19 +177,33 @@ export default function SmoothAnchors() {
         return;
       }
 
-      gsap.to(window, {
+      scrollTween = gsap.to(window, {
         duration: 0.9,
         ease: "power2.inOut",
         // Resolved by the plugin when the tween starts, so a pinned section
         // that has since been measured reports its real offset.
-        scrollTo: { y: hash, autoKill: true },
+        scrollTo: {
+          y: hash,
+          autoKill: true,
+          onAutoKill: handleInterrupted,
+        },
         onComplete: settle,
+        onInterrupt: handleInterrupted,
       });
     };
 
     document.addEventListener("click", handleClick);
+    window.addEventListener("scroll", scheduleSectionSync, { passive: true });
+    window.addEventListener("resize", scheduleSectionSync);
 
-    return () => document.removeEventListener("click", handleClick);
+    return () => {
+      mounted = false;
+      document.removeEventListener("click", handleClick);
+      window.removeEventListener("scroll", scheduleSectionSync);
+      window.removeEventListener("resize", scheduleSectionSync);
+      window.cancelAnimationFrame(frame);
+      scrollTween?.kill();
+    };
   }, []);
 
   return null;
