@@ -8,6 +8,7 @@ import TextReveal from "./components/TextReveal";
 import WorkReel from "./components/WorkReel";
 import { projects } from "./data/projects";
 import { contact, mailtoHref } from "./data/contact";
+import { PORTRAIT } from "./lib/site";
 
 const navigation = [
   { label: "home", href: "#top" },
@@ -93,7 +94,7 @@ export default function Home() {
           <Image
             className="portrait"
             src="/Images/vanshaj_v3.png"
-            alt="Vanshaj looking upward"
+            alt={PORTRAIT.alt}
             width={2664}
             height={2664}
             sizes="(max-width: 720px) 118vw, (max-width: 1200px) 82vw, 1040px"
@@ -157,9 +158,10 @@ export default function Home() {
               </h2>
             </TextReveal>
             <p>
-              I work across the stack with a focus on clear architecture,
-              responsive interaction, and software that remains easy to
-              extend.
+              I&apos;m Vanshaj Gugnani, a full stack developer working with
+              founders and teams in Toronto and across Canada. I focus on clear
+              architecture, responsive interaction, and software that stays
+              easy to extend.
             </p>
           </div>
 

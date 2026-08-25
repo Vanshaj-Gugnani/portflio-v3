@@ -1,0 +1,46 @@
+# Vanshaj Gugnani
+
+> Full stack developer building fast, accessible web products for teams in
+> Toronto and across Canada. React, Next.js, Node, .NET, and AI integrations.
+
+Vanshaj Gugnani is a full stack developer with 5+ years of experience and 20+
+delivered projects, including 10+ AI-powered solutions. He works end to end:
+frontend architecture, backend systems, and the cloud delivery around them.
+
+## Contact
+
+- Email: vanshajgugnani@gmail.com
+- LinkedIn: https://www.linkedin.com/in/vanshaj-gugnani/
+- GitHub: https://github.com/Vanshaj-Gugnani
+- Website: https://vgugnani.com
+
+## Expertise
+
+- Frontend: JavaScript, TypeScript, React, Next.js, React Native, Redux,
+  Tailwind CSS, Material UI, Framer Motion, Angular, accessibility
+- Backend: Node.js, Express, NestJS, .NET / ASP.NET, Java / Spring Boot, Go,
+  PHP, REST APIs, GraphQL, WebSockets, OAuth
+- Data and AI: Python, SQL, PostgreSQL, MongoDB, Redis, DynamoDB, Firebase,
+  Prisma, Pandas, NumPy, data pipelines, generative AI, LangChain, LangGraph, RAG
+- Cloud and delivery: AWS (EC2, S3, Lambda, RDS), Azure, GCP, Docker,
+  Kubernetes, CI/CD, infrastructure as code, Jenkins, GitHub Actions
+
+## Selected work
+
+- [Figure Out Media](https://figureoutmedia.com): Marketing site for a Toronto
+  video studio. Brand films and campaign work as a scroll-driven reel the team
+  can update themselves. Next.js, React, TypeScript, Tailwind CSS, AWS.
+- [Prowave](https://prowave.co): Site for an AI automation agency, explaining
+  workflow, voice, and support agents to non-technical buyers. Next.js, NestJS,
+  Python, LangGraph, LangChain, PostgreSQL, Cloudflare.
+- [Empreso](https://empreso.ca): Career platform for people moving into tech
+  roles, covering resume tooling, interview prep, background checks, and
+  training. Next.js, NestJS, MySQL, Redis, generative AI, Azure.
+- [Konnecture](https://konnecture.vgugnani.com): Consultancy site for a business
+  scaling firm, covering growth planning, automation, and investor readiness.
+  Next.js, React, TypeScript, Tailwind CSS, generative AI.
+
+## Availability
+
+Available for new builds, redesigns, and AI integrations. Reach out via the
+contact form at https://vgugnani.com/#contact or by email.
