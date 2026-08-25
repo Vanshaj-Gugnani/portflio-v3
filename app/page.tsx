@@ -1,26 +1,34 @@
 import Image from "next/image";
+import ArrowUpRight from "./components/ArrowUpRight";
 import CapabilityBands from "./components/CapabilityBands";
+import ContactForm from "./components/ContactForm";
+import SmoothAnchors from "./components/SmoothAnchors";
 import CountingNumber from "./components/CountingNumber";
 import TextReveal from "./components/TextReveal";
+import WorkReel from "./components/WorkReel";
+import { projects } from "./data/projects";
+import { contact, mailtoHref } from "./data/contact";
 
 const navigation = [
   { label: "home", href: "#top" },
   { label: "about", href: "#about" },
   { label: "skills", href: "#skills" },
-  { label: "work", count: "04", href: "#work" },
+  {
+    label: "work",
+    count: String(projects.length).padStart(2, "0"),
+    href: "#work",
+  },
+  { label: "contact", href: "#contact" },
 ];
 
-function ArrowUpRight() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 19 19 5M8 5h11v11" />
-    </svg>
-  );
-}
-
 export default function Home() {
+  const mailto = mailtoHref(contact.email);
+  const socials = contact.socials.filter((social) => social.href);
+
   return (
     <main id="top" className="portfolio-shell">
+      <SmoothAnchors />
+
       <a className="skip-link" href="#hero-title">
         Skip to introduction
       </a>
@@ -118,10 +126,9 @@ export default function Home() {
         </div>
 
         <a
-          id="contact"
           className="contact-card"
-          href="mailto:?subject=Let%27s%20build%20something"
-          aria-label="Start a new email to Vanshaj"
+          href="#contact"
+          aria-label="Go to the contact form"
         >
           <span className="contact-action">
             Let&apos;s build something
@@ -238,9 +245,67 @@ export default function Home() {
 
       <section
         id="work"
-        className="work-placeholder"
-        aria-label="Selected work"
-      />
+        className="work-section"
+        aria-labelledby="work-title"
+      >
+        <div className="work-intro">
+          <TextReveal>
+            <h2 id="work-title">
+              Projects I took{" "}
+              <span className="work-accent">start to finish.</span>
+            </h2>
+          </TextReveal>
+        </div>
+
+        <WorkReel />
+      </section>
+
+      <section
+        id="contact"
+        className="contact-section"
+        aria-labelledby="contact-title"
+      >
+        <div className="contact-intro">
+          <TextReveal>
+            <h2 id="contact-title">
+              Tell me what you&apos;re{" "}
+              <span className="contact-accent">working on.</span>
+            </h2>
+          </TextReveal>
+        </div>
+
+        <ContactForm email={contact.email} mailto={mailto} />
+      </section>
+
+      <footer className="site-footer">
+        <div className="footer-main">
+          {mailto ? (
+            <a className="footer-email" href={mailto}>
+              {contact.email}
+              <ArrowUpRight />
+            </a>
+          ) : null}
+
+          {socials.length > 0 ? (
+            <nav className="footer-social" aria-label="Elsewhere">
+              {socials.map((social) => (
+                <a
+                  href={social.href}
+                  key={social.label}
+                  rel="noreferrer noopener"
+                  target="_blank"
+                >
+                  {social.label}
+                </a>
+              ))}
+            </nav>
+          ) : null}
+        </div>
+
+        <p className="footer-wordmark" aria-hidden="true">
+          VANSHAJ
+        </p>
+      </footer>
     </main>
   );
 }
