@@ -115,8 +115,9 @@ export async function submitContact(
     errors.intent = "Pick one so I know where to start.";
   }
 
-  if (message.length < 10) errors.message = "A sentence or two, at least.";
-  else if (message.length > 4000) errors.message = "That is over 4000 characters.";
+  if (message.length > 4000) {
+    errors.message = "That is over 4000 characters.";
+  }
 
   if (Object.keys(errors).length > 0) {
     return {
@@ -181,7 +182,7 @@ export async function submitContact(
         `Email: ${email}`,
         `Interested in: ${intent}`,
         "",
-        message,
+        message || "(No message provided.)",
         "",
         `Submitted: ${new Date().toISOString()}`,
       ].join("\n"),

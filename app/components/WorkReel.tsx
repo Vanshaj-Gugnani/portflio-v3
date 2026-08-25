@@ -3,11 +3,12 @@
 import { useRef, useState, type CSSProperties } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { SplitText } from "gsap/SplitText";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ArrowUpRight from "./ArrowUpRight";
 import { projects } from "../data/projects";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(useGSAP, SplitText, ScrollTrigger);
 
 const REEL_QUERY =
   "(min-width: 901px) and (prefers-reduced-motion: no-preference)";
@@ -128,6 +129,90 @@ export default function WorkReel() {
         const mediaEls = panels.map((panel) =>
           panel.querySelector<HTMLElement>(".work-media-inner"),
         );
+        const panelReveals = panels.map((panel) => {
+          const targets = Array.from(
+            panel.querySelectorAll<HTMLElement>(".work-reveal-text"),
+          );
+          const linkIcons = Array.from(
+            panel.querySelectorAll<SVGElement>(".work-link svg"),
+          );
+          const splits: SplitText[] = [];
+          const lines: HTMLElement[] = [];
+          const blocks: HTMLElement[] = [];
+          const phases: Array<"head" | "body" | "stack"> = [];
+          const phaseIndexes: number[] = [];
+          let headLineIndex = 0;
+          let stackLineIndex = 0;
+          let maxBodyLines = 0;
+
+          targets.forEach((target) => {
+            const phase = target.closest(".work-stack")
+              ? "stack"
+              : target.matches(
+                    ".work-brief > .work-reveal-text, .work-link-label",
+                  )
+                ? "body"
+                : "head";
+            const split = SplitText.create(target, {
+              type: "lines",
+              linesClass: "text-reveal-line",
+              lineThreshold: 0.1,
+              tag: "span",
+            });
+
+            splits.push(split);
+
+            (split.lines as HTMLElement[]).forEach((line, localLineIndex) => {
+              const wrapper = document.createElement("span");
+              const block = document.createElement("span");
+              const parent = line.parentNode;
+
+              wrapper.className = "text-reveal-line-wrapper";
+              block.className = "text-reveal-block";
+              block.style.backgroundColor = "var(--accent)";
+              block.setAttribute("aria-hidden", "true");
+
+              parent?.insertBefore(wrapper, line);
+              wrapper.append(line, block);
+              lines.push(line);
+              blocks.push(block);
+              phases.push(phase);
+
+              if (phase === "head") {
+                phaseIndexes.push(headLineIndex);
+                headLineIndex += 1;
+              } else if (phase === "stack") {
+                phaseIndexes.push(stackLineIndex);
+                stackLineIndex += 1;
+              } else {
+                phaseIndexes.push(localLineIndex);
+                maxBodyLines = Math.max(maxBodyLines, localLineIndex + 1);
+              }
+            });
+          });
+
+          const bodyStart = headLineIndex * 0.06;
+          const stackStart =
+            bodyStart + Math.max(1, maxBodyLines) * 0.06 + 0.08;
+          const starts = phases.map((phase, index) => {
+            if (phase === "head") return phaseIndexes[index] * 0.06;
+            if (phase === "body") {
+              return bodyStart + phaseIndexes[index] * 0.06;
+            }
+
+            return stackStart + phaseIndexes[index] * 0.045;
+          });
+
+          return {
+            blocks,
+            bodyStart,
+            linkIcons,
+            lines,
+            splits,
+            starts,
+            timeline: null as gsap.core.Timeline | null,
+          };
+        });
 
         // Scroll is an accumulator here, not a position. The track is never
         // tied to scroll offset, so a project is always fully centred: the
@@ -140,6 +225,69 @@ export default function WorkReel() {
 
         // Overscale once so the arrival drift never exposes a media edge.
         gsap.set(mediaEls.filter(Boolean), { scale: 1.06 });
+
+        // The first project is already present when the reel enters view. Every
+        // later panel starts hidden and is painted in by the accent sweep when
+        // its scroll step becomes authoritative.
+        panelReveals.forEach(({ blocks, lines, linkIcons }, index) => {
+          gsap.set(lines, { opacity: index === 0 ? 1 : 0 });
+          gsap.set(linkIcons, { opacity: index === 0 ? 1 : 0 });
+          gsap.set(blocks, {
+            scaleX: 0,
+            transformOrigin: "left center",
+          });
+        });
+
+        const revealPanelText = (index: number) => {
+          const reveal = panelReveals[index];
+
+          if (!reveal || reveal.lines.length === 0) return;
+
+          reveal.timeline?.kill();
+          gsap.set(reveal.lines, { opacity: 0 });
+          gsap.set(reveal.linkIcons, { opacity: 0 });
+          gsap.set(reveal.blocks, {
+            scaleX: 0,
+            transformOrigin: "left center",
+          });
+
+          const duration = 0.42;
+          // Let the horizontal media transition do its work first. Starting
+          // the wipe near the end keeps the copy visually anchored instead of
+          // letting the orange blocks ride in from the side with the track.
+          const timeline = gsap.timeline({ delay: 0.42 });
+
+          reveal.lines.forEach((line, lineIndex) => {
+            const block = reveal.blocks[lineIndex];
+            const lineStart = reveal.starts[lineIndex];
+
+            timeline
+              .to(
+                block,
+                { scaleX: 1, duration, ease: "power4.inOut" },
+                lineStart,
+              )
+              .set(line, { opacity: 1 }, lineStart + duration)
+              .set(
+                block,
+                { transformOrigin: "right center" },
+                lineStart + duration,
+              )
+              .to(
+                block,
+                { scaleX: 0, duration, ease: "power4.inOut" },
+                lineStart + duration,
+              );
+          });
+
+          timeline.to(
+            reveal.linkIcons,
+            { opacity: 1, duration: 0.18, ease: "power2.out" },
+            reveal.bodyStart + duration,
+          );
+
+          reveal.timeline = timeline;
+        };
 
         // The rule under the titles is drawn on the reel rather than inside a
         // panel, so it stays put while the track slides. Only its height has to
@@ -164,6 +312,14 @@ export default function WorkReel() {
           if (index === current) return;
 
           const direction = index > current ? 1 : -1;
+          const outgoingReveal = panelReveals[current];
+
+          outgoingReveal?.timeline?.kill();
+          if (outgoingReveal) {
+            gsap.set(outgoingReveal.lines, { opacity: 0 });
+            gsap.set(outgoingReveal.linkIcons, { opacity: 0 });
+            gsap.set(outgoingReveal.blocks, { scaleX: 0 });
+          }
 
           current = index;
 
@@ -197,6 +353,8 @@ export default function WorkReel() {
               },
             );
           }
+
+          revealPanelText(index);
         };
 
         const trigger = ScrollTrigger.create({
@@ -235,6 +393,11 @@ export default function WorkReel() {
           trigger.kill();
           triggerRef.current = null;
           reel?.style.removeProperty("--work-rule-y");
+          panelReveals.forEach(({ linkIcons, splits, timeline }) => {
+            timeline?.kill();
+            gsap.set(linkIcons, { clearProps: "opacity" });
+            [...splits].reverse().forEach((split) => split.revert());
+          });
           gsap.set(track, { clearProps: "x" });
           gsap.set(mediaEls.filter(Boolean), { clearProps: "transform" });
         };
@@ -290,14 +453,17 @@ export default function WorkReel() {
               }}
             >
               <header className="work-panel-head">
-                <p className="work-index" aria-hidden="true">
+                <p className="work-index work-reveal-text" aria-hidden="true">
                   {pad(index)}
                 </p>
-                <h3 className="work-title" id={`${project.id}-title`}>
+                <h3
+                  className="work-title work-reveal-text"
+                  id={`${project.id}-title`}
+                >
                   {project.title}
                 </h3>
                 {project.year ? (
-                  <p className="work-year">{project.year}</p>
+                  <p className="work-year work-reveal-text">{project.year}</p>
                 ) : null}
               </header>
 
@@ -343,14 +509,28 @@ export default function WorkReel() {
               {hasFoot ? (
                 <footer className="work-panel-foot">
                   <div className="work-brief">
-                    {project.blurb ? <p>{project.blurb}</p> : null}
+                    {project.blurb ? (
+                      <p className="work-reveal-text">{project.blurb}</p>
+                    ) : null}
                     {project.stack.length > 0 ? (
                       <ul
                         className="work-stack"
                         aria-label={`${project.title} stack`}
                       >
-                        {project.stack.map((tool) => (
-                          <li key={tool}>{tool}</li>
+                        {project.stack.map((tool, toolIndex) => (
+                          <li key={tool}>
+                            <span className="work-reveal-text">
+                              {toolIndex > 0 ? (
+                                <span
+                                  aria-hidden="true"
+                                  className="work-stack-divider"
+                                >
+                                  /
+                                </span>
+                              ) : null}
+                              {tool}
+                            </span>
+                          </li>
                         ))}
                       </ul>
                     ) : null}
@@ -369,7 +549,9 @@ export default function WorkReel() {
                           rel="noreferrer noopener"
                           target="_blank"
                         >
-                          {link.label}
+                          <span className="work-link-label work-reveal-text">
+                            {link.label}
+                          </span>
                           <ArrowUpRight />
                         </a>
                       ))}

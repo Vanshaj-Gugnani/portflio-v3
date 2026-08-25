@@ -218,38 +218,22 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
     }
   };
 
-  if (succeeded) {
-    return (
-      <div className="contact-result" role="status">
-        <p className="contact-result-line">
-          Thanks, your message came through. I will get back to you by email.
-        </p>
-        <button
-          className="contact-reset"
-          type="button"
-          onClick={() => {
-            const turnstile = window.turnstile;
-            const widgetId = turnstileWidgetIdRef.current;
+  const handleReset = () => {
+    const turnstile = window.turnstile;
+    const widgetId = turnstileWidgetIdRef.current;
 
-            if (turnstile && widgetId) turnstile.remove(widgetId);
-            turnstileWidgetIdRef.current = null;
-            clearTurnstileToken();
-            setTurnstileReady(false);
-            setTurnstileError("");
-            setDismissed(state);
-            setValues(EMPTY);
-          }}
-        >
-          Send another
-        </button>
-      </div>
-    );
-  }
+    if (turnstile && widgetId) turnstile.reset(widgetId);
+    clearTurnstileToken();
+    setTurnstileError("");
+    setDismissed(state);
+    setValues(EMPTY);
+  };
 
   return (
     <form
       className="contact-form"
       action={formAction}
+      data-success={succeeded ? "true" : undefined}
       noValidate
       onSubmit={handleSubmit}
       ref={formRef}
@@ -272,6 +256,7 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
         <label htmlFor={fieldId("name") + "-company"}>Company</label>
         <input
           autoComplete="off"
+          disabled={succeeded}
           id={fieldId("name") + "-company"}
           name="company"
           tabIndex={-1}
@@ -283,6 +268,7 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
         <span className="contact-word">Hi Vanshaj, my name is</span>{" "}
         <Blank
           autoComplete="name"
+          disabled={succeeded}
           error={state.errors.name}
           errorId={errorId("name")}
           field="name"
@@ -310,6 +296,7 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
                 state.errors.intent ? errorId("intent") : undefined
               }
               aria-invalid={state.errors.intent ? true : undefined}
+              disabled={succeeded}
               id={fieldId("intent")}
               name="intent"
               onChange={(event) => set("intent")(event.target.value)}
@@ -336,6 +323,7 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
         <span className="contact-word">You can reach me at</span>{" "}
         <Blank
           autoComplete="email"
+          disabled={succeeded}
           error={state.errors.email}
           errorId={errorId("email")}
           field="email"
@@ -354,12 +342,13 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
         className="contact-message"
         data-invalid={state.errors.message ? "true" : undefined}
       >
-        <label htmlFor={fieldId("message")}>Message</label>
+        <label htmlFor={fieldId("message")}>Message (optional)</label>
         <textarea
           aria-describedby={
             state.errors.message ? errorId("message") : `${uid}-message-help`
           }
           aria-invalid={state.errors.message ? true : undefined}
+          disabled={succeeded}
           id={fieldId("message")}
           name="message"
           onChange={(event) => set("message")(event.target.value)}
@@ -372,7 +361,7 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
           </p>
         ) : (
           <p className="contact-help" id={`${uid}-message-help`}>
-            Scope, timeline, anything relevant.
+            Optional — scope, timeline, anything relevant.
           </p>
         )}
       </div>
@@ -380,27 +369,47 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
       <div className="contact-foot">
         <div className="contact-turnstile" ref={turnstileContainerRef} />
 
-        <button
-          aria-busy={pending || verifying}
-          className="contact-submit"
-          disabled={pending || verifying || !turnstileReady}
-          type="submit"
-        >
-          <span>
-            {pending ? "Sending" : verifying ? "Checking" : "Send message"}
-          </span>
-          <span className="contact-submit-mark">
-            <ArrowUpRight />
-          </span>
-        </button>
+        {succeeded ? (
+          <div aria-live="polite" className="contact-sent" role="status">
+            <div>
+              <p className="contact-sent-kicker">Message sent</p>
+              <p className="contact-sent-copy">
+                I&apos;ll reply to <span>{values.email}</span>.
+              </p>
+            </div>
+            <button
+              className="contact-reset"
+              onClick={handleReset}
+              type="button"
+            >
+              Send another
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              aria-busy={pending || verifying}
+              className="contact-submit"
+              disabled={pending || verifying || !turnstileReady}
+              type="submit"
+            >
+              <span>
+                {pending ? "Sending" : verifying ? "Checking" : "Send message"}
+              </span>
+              <span className="contact-submit-mark">
+                <ArrowUpRight />
+              </span>
+            </button>
 
-        <p aria-live="polite" className="contact-note">
-          {turnstileError ? (
-            turnstileError
-          ) : state.status === "error" ? (
-            <FormNote email={email} mailto={mailto} message={state.message} />
-          ) : null}
-        </p>
+            <p aria-live="polite" className="contact-note">
+              {turnstileError ? (
+                turnstileError
+              ) : state.status === "error" ? (
+                <FormNote email={email} mailto={mailto} message={state.message} />
+              ) : null}
+            </p>
+          </>
+        )}
       </div>
     </form>
   );
@@ -443,6 +452,7 @@ function FormNote({
 
 type BlankProps = {
   autoComplete?: string;
+  disabled?: boolean;
   error?: string;
   errorId: string;
   field: ContactField;
@@ -465,6 +475,7 @@ type BlankProps = {
  */
 function Blank({
   autoComplete,
+  disabled,
   error,
   errorId,
   field,
@@ -490,6 +501,7 @@ function Blank({
           aria-describedby={error ? errorId : undefined}
           aria-invalid={error ? true : undefined}
           autoComplete={autoComplete}
+          disabled={disabled}
           id={id}
           inputMode={inputMode}
           name={field}
