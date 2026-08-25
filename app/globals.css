@@ -198,7 +198,7 @@ a {
 
 .menu-panel a {
   display: grid;
-  grid-template-columns: 2rem 1fr;
+  grid-template-columns: 1fr;
   align-items: center;
   padding-block: 0.9rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -210,11 +210,6 @@ a {
 
 .menu-panel a:last-child {
   border-bottom: 0;
-}
-
-.menu-panel a span {
-  color: var(--accent);
-  font-size: 0.66rem;
 }
 
 .menu-panel a:hover {
@@ -1512,7 +1507,7 @@ a {
 
 .work-panel-head {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   gap: clamp(0.85rem, 1.8vw, 1.75rem);
   padding-bottom: clamp(0.65rem, 1.4vh, 1.1rem);
@@ -1536,15 +1531,6 @@ a {
   background: var(--rule);
   content: "";
   pointer-events: none;
-}
-
-.work-index {
-  margin: 0;
-  color: var(--accent);
-  font-size: clamp(0.78rem, 0.92vw, 0.95rem);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
 }
 
 .work-title {
@@ -1779,17 +1765,11 @@ a {
   }
 
   .work-panel-head {
-    grid-template-columns: auto minmax(0, 1fr);
     row-gap: 0.5rem;
   }
 
   .work-title {
     font-size: clamp(1.85rem, 8.5vw, 2.4rem);
-  }
-
-  .work-year {
-    grid-row: 2;
-    grid-column: 2;
   }
 
   .work-panel-foot {

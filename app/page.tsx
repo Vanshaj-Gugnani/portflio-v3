@@ -21,6 +21,10 @@ const navigation = [
   { label: "contact", href: "#contact" },
 ];
 
+const primaryNavigation = navigation.filter(
+  (item) => item.href !== "#contact",
+);
+
 export default function Home() {
   const mailto = mailtoHref(contact.email);
   const socials = contact.socials.filter((social) => social.href);
@@ -39,7 +43,7 @@ export default function Home() {
         </a>
 
         <nav className="primary-nav" aria-label="Primary navigation">
-          {navigation.map((item, index) => (
+          {primaryNavigation.map((item, index) => (
             <a
               href={item.href}
               key={item.label}
@@ -57,9 +61,8 @@ export default function Home() {
             <span />
           </summary>
           <nav className="menu-panel" aria-label="Menu navigation">
-            {navigation.map((item, index) => (
+            {navigation.map((item) => (
               <a href={item.href} key={item.label}>
-                <span>0{index + 1}</span>
                 {item.label}
               </a>
             ))}

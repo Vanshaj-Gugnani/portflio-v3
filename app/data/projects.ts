@@ -46,7 +46,7 @@ export type Project = {
  *      derive their length from this array, so nothing else needs touching.
  *
  * TODO(vansh): `year` is left blank on every entry, since it is not something
- * that can be read off the live sites. The panel head hides it when empty, so
+ * that can be read off the Try nows. The panel head hides it when empty, so
  * the layout is fine as-is; fill it in and it appears at the right of the head.
  *
  * `stack` is assigned by what each product actually does rather than by an
@@ -73,7 +73,7 @@ export const projects: Project[] = [
     video: "/videos/figureoutmedia-4x-fixed.webm",
     poster: "/images/posters/figureoutmedia.jpg",
     aspect: "1302 / 720",
-    links: [{ label: "Live site", href: "https://figureoutmedia.com" }],
+    links: [{ label: "Try now", href: "https://figureoutmedia.com" }],
   },
   {
     id: "prowave",
@@ -94,7 +94,7 @@ export const projects: Project[] = [
     video: "/videos/prowave-4x-fixed.webm",
     poster: "/images/posters/prowave.jpg",
     aspect: "1302 / 720",
-    links: [{ label: "Live site", href: "https://prowave.co" }],
+    links: [{ label: "Try now", href: "https://prowave.co" }],
   },
   {
     id: "empreso",
@@ -114,7 +114,7 @@ export const projects: Project[] = [
     video: "/videos/empreso-4x-fixed.webm",
     poster: "/images/posters/empreso.jpg",
     aspect: "1302 / 720",
-    links: [{ label: "Live site", href: "https://empreso.ca" }],
+    links: [{ label: "Try now", href: "https://empreso.ca" }],
   },
   {
     id: "konnecture",
@@ -133,6 +133,6 @@ export const projects: Project[] = [
     video: "/videos/konnecture-4x-fixed.webm",
     poster: "/images/posters/konnecture.jpg",
     aspect: "1302 / 720",
-    links: [{ label: "Live site", href: "https://konnecture.vgugnani.com" }],
+    links: [{ label: "Try now", href: "https://konnecture.vgugnani.com" }],
   },
 ];

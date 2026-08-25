@@ -48,10 +48,6 @@ function setRate(video: HTMLVideoElement) {
  */
 const STEP_VH = 0.6;
 
-function pad(index: number) {
-  return String(index + 1).padStart(2, "0");
-}
-
 export default function WorkReel() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -453,9 +449,6 @@ export default function WorkReel() {
               }}
             >
               <header className="work-panel-head">
-                <p className="work-index work-reveal-text" aria-hidden="true">
-                  {pad(index)}
-                </p>
                 <h3
                   className="work-title work-reveal-text"
                   id={`${project.id}-title`}
