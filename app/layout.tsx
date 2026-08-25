@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { buildStructuredData } from "./lib/structured-data";
 import {
+  FB_APP_ID,
   KEYWORDS,
   LOCATION,
   PERSON,
@@ -69,6 +70,7 @@ export const metadata: Metadata = {
     // and Next fills the tags in, hash included. Setting it here would win
     // over that file and pin a stale URL.
   },
+  ...(FB_APP_ID ? { facebook: { appId: FB_APP_ID } } : {}),
   twitter: {
     card: "summary_large_image",
     title: SITE_TITLE,

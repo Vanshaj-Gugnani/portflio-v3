@@ -16,6 +16,15 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || FALLBACK_URL
 ).replace(/\/+$/, "");
 
+/**
+ * Optional. Facebook's Sharing Debugger lists fb:app_id under "required
+ * properties", but it is only required to read domain Insights in the Meta
+ * Business suite \u2014 it has no effect on how a shared link renders and no SEO
+ * value. Set NEXT_PUBLIC_FB_APP_ID only if you create an app at
+ * developers.facebook.com and actually want that analytics data.
+ */
+export const FB_APP_ID = process.env.NEXT_PUBLIC_FB_APP_ID || "";
+
 export const PERSON = {
   /** Full legal-ish name. This is the brand term the site should own. */
   name: "Vanshaj Gugnani",
@@ -55,9 +64,14 @@ export const SITE_TITLE = "Full Stack Developer Toronto — Vanshaj Gugnani";
 export const SITE_DESCRIPTION =
   "Full stack developer building fast, accessible web products for teams in Toronto and across Canada. React, Next.js, Node, .NET, and AI integrations.";
 
-/** Shown on social cards, where there is less room than in a SERP. */
+/**
+ * Shown on social cards. LinkedIn's Post Inspector warns below 100 characters
+ * and the previous copy landed on exactly 99, so the stack is named here as
+ * well. That buys the length honestly instead of padding it, and the extra
+ * terms are the ones a client scanning a shared link is looking for.
+ */
 export const SOCIAL_DESCRIPTION =
-  "Full stack developer building fast, accessible web products for teams in Toronto and across Canada.";
+  "Full stack developer building fast, accessible web products for teams in Toronto and across Canada \u2014 React, Next.js, Node, and AI integrations.";
 
 /**
  * Google ignores meta keywords, but Bing and several AI crawlers still read
