@@ -1,6 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import Script from "next/script";
+import {
+  type FormEvent,
+  useActionState,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import ArrowUpRight from "./ArrowUpRight";
 import ChevronDown from "./ChevronDown";
 import { submitContact } from "../actions/contact";
@@ -18,6 +27,34 @@ type ContactFormProps = {
 };
 
 const EMPTY = { name: "", email: "", intent: "", message: "" };
+const TURNSTILE_SITE_KEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+type TurnstileApi = {
+  execute: (widgetId: string) => void;
+  remove: (widgetId: string) => void;
+  render: (
+    container: HTMLElement,
+    options: {
+      sitekey: string;
+      action: "contact";
+      appearance: "interaction-only";
+      execution: "execute";
+      responseField: false;
+      callback: (token: string) => void;
+      "error-callback": () => void;
+      "expired-callback": () => void;
+      "timeout-callback": () => void;
+    },
+  ) => string;
+  reset: (widgetId: string) => void;
+};
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
 
 export default function ContactForm({ mailto, email }: ContactFormProps) {
   const [state, formAction, pending] = useActionState(
@@ -26,12 +63,79 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
   );
   const [values, setValues] = useState(EMPTY);
   const [dismissed, setDismissed] = useState<ContactState | null>(null);
+  const [turnstileReady, setTurnstileReady] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [turnstileError, setTurnstileError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
+  const verifiedSubmissionRef = useRef(false);
   const uid = useId();
 
   // Derived rather than stored: `state` is a fresh object per submission, so
   // dismissing this result never hides the next one.
   const succeeded = state.status === "success" && dismissed !== state;
+
+  const clearTurnstileToken = useCallback(() => {
+    if (tokenInputRef.current) tokenInputRef.current.value = "";
+    verifiedSubmissionRef.current = false;
+  }, []);
+
+  const failTurnstile = useCallback(
+    (message: string) => {
+      clearTurnstileToken();
+      setVerifying(false);
+      setTurnstileError(message);
+    },
+    [clearTurnstileToken],
+  );
+
+  const renderTurnstile = useCallback(() => {
+    const turnstile = window.turnstile;
+    const container = turnstileContainerRef.current;
+
+    if (!turnstile || !container || turnstileWidgetIdRef.current) return;
+
+    if (!TURNSTILE_SITE_KEY) {
+      failTurnstile("The security check is not configured yet.");
+      return;
+    }
+
+    try {
+      turnstileWidgetIdRef.current = turnstile.render(container, {
+        sitekey: TURNSTILE_SITE_KEY,
+        action: "contact",
+        appearance: "interaction-only",
+        execution: "execute",
+        responseField: false,
+        callback: (token) => {
+          const form = formRef.current;
+          const tokenInput = tokenInputRef.current;
+
+          if (!form || !tokenInput) return;
+
+          tokenInput.value = token;
+          verifiedSubmissionRef.current = true;
+          setVerifying(false);
+          setTurnstileError("");
+          form.requestSubmit();
+        },
+        "error-callback": () => {
+          failTurnstile("The security check failed. Please try again.");
+        },
+        "expired-callback": () => {
+          failTurnstile("The security check expired. Please try again.");
+        },
+        "timeout-callback": () => {
+          failTurnstile("The security check timed out. Please try again.");
+        },
+      });
+      setTurnstileReady(true);
+    } catch {
+      failTurnstile("The security check could not load. Please refresh.");
+    }
+  }, [failTurnstile]);
 
   useEffect(() => {
     // React resets the form's controls once an action settles. Our state did
@@ -56,16 +160,63 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
         control.value = value;
       }
     }
+
+    clearTurnstileToken();
+    const turnstile = window.turnstile;
+    const widgetId = turnstileWidgetIdRef.current;
+
+    if (!turnstile || !widgetId) return;
+
+    if (state.status === "error") {
+      turnstile.reset(widgetId);
+    }
     // Re-syncing is a response to the action settling, so `state` is the only
     // trigger; `values` is read for its current contents, not watched.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+
+  useEffect(
+    () => () => {
+      const turnstile = window.turnstile;
+      const widgetId = turnstileWidgetIdRef.current;
+
+      if (turnstile && widgetId) turnstile.remove(widgetId);
+    },
+    [],
+  );
 
   const fieldId = (field: ContactField) => `${uid}-${field}`;
   const errorId = (field: ContactField) => `${uid}-${field}-error`;
 
   const set = (field: ContactField) => (value: string) =>
     setValues((current) => ({ ...current, [field]: value }));
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (verifiedSubmissionRef.current) {
+      verifiedSubmissionRef.current = false;
+      return;
+    }
+
+    event.preventDefault();
+    clearTurnstileToken();
+    setTurnstileError("");
+
+    const turnstile = window.turnstile;
+    const widgetId = turnstileWidgetIdRef.current;
+
+    if (!turnstile || !widgetId) {
+      failTurnstile("The security check is still loading. Please try again.");
+      return;
+    }
+
+    setVerifying(true);
+
+    try {
+      turnstile.execute(widgetId);
+    } catch {
+      failTurnstile("The security check could not start. Please try again.");
+    }
+  };
 
   if (succeeded) {
     return (
@@ -77,6 +228,14 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
           className="contact-reset"
           type="button"
           onClick={() => {
+            const turnstile = window.turnstile;
+            const widgetId = turnstileWidgetIdRef.current;
+
+            if (turnstile && widgetId) turnstile.remove(widgetId);
+            turnstileWidgetIdRef.current = null;
+            clearTurnstileToken();
+            setTurnstileReady(false);
+            setTurnstileError("");
             setDismissed(state);
             setValues(EMPTY);
           }}
@@ -88,7 +247,26 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
   }
 
   return (
-    <form className="contact-form" action={formAction} noValidate ref={formRef}>
+    <form
+      className="contact-form"
+      action={formAction}
+      noValidate
+      onSubmit={handleSubmit}
+      ref={formRef}
+    >
+      <Script
+        id="cloudflare-turnstile"
+        onReady={renderTurnstile}
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        strategy="afterInteractive"
+      />
+
+      <input
+        name="cf-turnstile-response"
+        ref={tokenInputRef}
+        type="hidden"
+      />
+
       {/* Honeypot. Off-screen rather than display:none so bots still fill it. */}
       <div className="contact-honeypot" aria-hidden="true">
         <label htmlFor={fieldId("name") + "-company"}>Company</label>
@@ -200,15 +378,26 @@ export default function ContactForm({ mailto, email }: ContactFormProps) {
       </div>
 
       <div className="contact-foot">
-        <button className="contact-submit" disabled={pending} type="submit">
-          <span>{pending ? "Sending" : "Send message"}</span>
+        <div className="contact-turnstile" ref={turnstileContainerRef} />
+
+        <button
+          aria-busy={pending || verifying}
+          className="contact-submit"
+          disabled={pending || verifying || !turnstileReady}
+          type="submit"
+        >
+          <span>
+            {pending ? "Sending" : verifying ? "Checking" : "Send message"}
+          </span>
           <span className="contact-submit-mark">
             <ArrowUpRight />
           </span>
         </button>
 
         <p aria-live="polite" className="contact-note">
-          {state.status === "error" ? (
+          {turnstileError ? (
+            turnstileError
+          ) : state.status === "error" ? (
             <FormNote email={email} mailto={mailto} message={state.message} />
           ) : null}
         </p>
@@ -226,6 +415,10 @@ function FormNote({
   mailto: string | null;
   message: string;
 }) {
+  if (message === "security") {
+    return <>The security check is not configured yet.</>;
+  }
+
   if (message === "unconfigured" || message === "transport") {
     const lead =
       message === "unconfigured"

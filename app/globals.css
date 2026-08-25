@@ -2127,6 +2127,15 @@ a {
   display: grid;
 }
 
+/* The managed challenge stays out of the composition unless Cloudflare needs
+   human interaction. In that rare case it opens directly above the CTA. */
+.contact-turnstile {
+  position: absolute;
+  bottom: calc(100% + 0.75rem);
+  left: 0;
+  z-index: 2;
+}
+
 /* Echoes the hero card that points here, so the CTA and its destination read as
    one gesture. */
 .contact-submit {
