@@ -361,10 +361,14 @@ export default function WorkReel() {
           invalidateOnRefresh: true,
           // Without snap a viewer can rest a pixel either side of a step
           // boundary, where the smallest nudge flips the reel back and forth.
+          // GSAP snaps directionally by default, which would let any tiny wheel
+          // movement advance the reel. Nearest-point snapping preserves the
+          // half-step threshold used by onUpdate below.
           snap:
             panels.length > 1
               ? {
                   snapTo: 1 / steps,
+                  directional: false,
                   duration: { min: 0.15, max: 0.4 },
                   delay: 0.04,
                   ease: "power2.inOut",

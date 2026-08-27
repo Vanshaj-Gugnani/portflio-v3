@@ -27,6 +27,30 @@
   box-sizing: border-box;
 }
 
+html {
+  scrollbar-color: rgba(254, 254, 254, 0.38) transparent;
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+html::-webkit-scrollbar-track,
+html::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: rgba(254, 254, 254, 0.38);
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: rgba(254, 254, 254, 0.62);
+}
+
 
 body {
   margin: 0;
